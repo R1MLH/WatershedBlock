@@ -1,6 +1,9 @@
 import OOC
 import string
 import random
+import UnionFind
+
+uf = UnionFind()
 
 def nearbyV(Graphe, Vertice, cut = []): # retourne les arc voisins
     rList =[]
@@ -138,13 +141,23 @@ def BlocLabelling2(B1,B2,cut):
 
 def uniqueLabel(list_of_blocs):
     alphabet = string.ascii_uppercase
-    i = 0 ;
+
     for i in range (0,len(list_of_blocs)):
         bloc = list_of_blocs[i]
         letter = alphabet[i]
         for vertice in bloc.getVertices():
-            vertice.setLabel(letter + str(vertice.getLabel()))
-        i+=1
+            label = letter + str(vertice.getLabel())
+            uf.makeSet(label) # we use this oportunity to initialize the sets for the UnionFind
+            vertice.setLabel(label)
+
+
+def reLabel(list_of_blocs):
+    for bloc in list_of_blocs:
+        for vertice in bloc.getVertices():
+            label = uf.find(vertice.getLabel())
+            vertice.setLabel(label)
+
+
 
 def getMinimas(Graph):
     numero = 0
@@ -286,14 +299,11 @@ def label_composante_connexe(graphe,taille_bloc):
     for i in blocs:
         connexeComponent(i)
     uniqueLabel(blocs)
-    changes = 1
-    while(changes !=0):
-        changes = 0
-        for i in range(0,len(blocs)):
-            for j in range(0,len(blocs)):
-                changes += BlocLabelling(blocs[i],blocs[j],cuts[i][j])
-
-
+    for cut in cuts:
+        for edge in cut:
+            if isInner(edge):
+                uf.union(edge.getX().getLabel(),edge.getY().getLabel())
+    reLabel(blocs)
 
 
 
