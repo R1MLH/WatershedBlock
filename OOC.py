@@ -29,7 +29,7 @@ class Graph:
         print("Vertices :")
         print("[ ",end='')
         for vert in self.vertices:
-            print(str(vert) +' ',end = '')
+            print(str(vert) +':' + vert.label+" ",end = '')
         print(']')
         print("Edges : ")
         print("[ ",end='')

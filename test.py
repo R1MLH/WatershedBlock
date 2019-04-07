@@ -1,7 +1,7 @@
 import OOC
 import string
 import random
-import UnionFind
+from unionfind import UnionFind
 import numpy as np
 
 uf = UnionFind()
@@ -117,12 +117,12 @@ def BlocLabelling(B1,B2,cut):
         if isInner(elt):
             previousLabel = elt.getY().getLabel()
             newLabel =  elt.getX().getLabel()
-            if previousLabel != newLabel
+            if previousLabel != newLabel:
                 changes +=1
                 elt.getY().setLabel(newLabel)
-                    for vertice in B2.getVertices():
-                        if vertice.getLabel() == previousLabel :
-                            vertice.setLabel(newLabel)
+                for vertice in B2.getVertices():
+                    if vertice.getLabel() == previousLabel :
+                        vertice.setLabel(newLabel)
     return changes
 
 def BlocLabelling2(B1,B2,cut):
@@ -370,156 +370,41 @@ def divide_blocks(Graph, nrows, ncols):
 
 
 def label_composante_connexe(graphe,taille_bloc):
-    blocs,cuts = cut_graph(graphe,taille_bloc)
+    blocs = divide_blocks(graphe,taille_bloc,taille_bloc)
     for i in blocs:
         connexeComponent(i)
     uniqueLabel(blocs)
-    for cut in cuts:
-        for edge in cut:
+    for i in blocs:
+        for edge in i.cut:
             if isInner(edge):
-                uf.union(edge.getX().getLabel(),edge.getY().getLabel())
+                uf.union(edge.x.label,edge.y.label)
     reLabel(blocs)
+    return blocs
 
 
 
 
 def main():
-    # MGraph = OOC.Graph()
-    B1 = OOC.Graph()
-    B2 = OOC.Graph()
-    cut = []
 
-    PointA= OOC.Vertice("A",0)
-    PointB= OOC.Vertice("B",0)
-    PointC= OOC.Vertice("C",0)
-    PointD= OOC.Vertice("D",0)
-    PointE= OOC.Vertice("E",0)
-    PointF= OOC.Vertice("F",0)
-    PointG= OOC.Vertice("G",0)
-    PointH= OOC.Vertice("H",0)
-    PointI= OOC.Vertice("I",0)
-    PointJ= OOC.Vertice("J",0)
-    PointK= OOC.Vertice("K",0)
-    PointL= OOC.Vertice("L",0)
-    PointM= OOC.Vertice("M",0)
-    PointN= OOC.Vertice("N",0)
-    PointO= OOC.Vertice("O",0)
-    PointP= OOC.Vertice("P",0)
+    graph1 = create_graph(9,9) #create a random graph
 
-    Edge1 = OOC.Edge(PointA,PointB,0)
-    Edge2 = OOC.Edge(PointB,PointC,0)
-    Edge3 = OOC.Edge(PointC,PointD,0)
-    Edge4 = OOC.Edge(PointA,PointE,1)
-    Edge5 = OOC.Edge(PointB,PointF,4)
-    Edge6 = OOC.Edge(PointC,PointG,3)
-    Edge7 = OOC.Edge(PointD,PointH,2)
-    Edge8 = OOC.Edge(PointE,PointF,3)
-    Edge9 = OOC.Edge(PointF,PointG,5)
-    Edge10 = OOC.Edge(PointG,PointH,3)
-    Edge11 = OOC.Edge(PointE,PointI,1)
-    Edge12 = OOC.Edge(PointF,PointJ,2)
-    Edge13 = OOC.Edge(PointG,PointK,0)
-    Edge14 = OOC.Edge(PointH,PointL,0)
-    Edge15 = OOC.Edge(PointI,PointJ,5)
-    Edge16 = OOC.Edge(PointJ,PointK,0)#test : poid = 2
-    Edge17 = OOC.Edge(PointK,PointL,0)
-    Edge18 = OOC.Edge(PointI,PointM,5)
-    Edge19 = OOC.Edge(PointJ,PointN,3)
-    Edge20 = OOC.Edge(PointK,PointO,0)
-    Edge21 = OOC.Edge(PointL,PointP,4)
-    Edge22 = OOC.Edge(PointM,PointN,0)
-    Edge23 = OOC.Edge(PointN,PointO,1)
-    Edge24 = OOC.Edge(PointO,PointP,3)
+    print("----- PRINT GRAPH 1 -----")
+    graph1.affiche()
+
+    create_graph_file(graph1, "file.graph") #save it in a file
 
 
+    graph2 = fill_graph_with_file("file.graph") #read this file save it in another graph
+    print("----- PRINT GRAPH 2 -----")
+    graph2.affiche() # should have graph1 = graph2
 
+    print("----- DIVIDE BLOCKS -----")
+    divide_blocks(graph1,3,3)
 
-    B1.addVertice(PointA)
-    B1.addVertice(PointB)
-    B2.addVertice(PointC)
-    B2.addVertice(PointD)
-    B1.addVertice(PointE)
-    B1.addVertice(PointF)
-    B2.addVertice(PointG)
-    B2.addVertice(PointH)
-    B1.addVertice(PointI)
-    B1.addVertice(PointJ)
-    B2.addVertice(PointK)
-    B2.addVertice(PointL)
-    B1.addVertice(PointM)
-    B1.addVertice(PointN)
-    B2.addVertice(PointO)
-    B2.addVertice(PointP)
+    print("----- test label---------")
+    for b in label_composante_connexe(graph1,3):
+        b.affiche()
 
-    B1.addEdge(Edge1)
-    # MGraph.addEdge(Edge2)
-    cut.append(Edge2)
-    B2.addEdge(Edge3)
-    B1.addEdge(Edge4)
-    B1.addEdge(Edge5)
-    B2.addEdge(Edge6)
-    B2.addEdge(Edge7)
-    B1.addEdge(Edge8)
-    # MGraph.addEdge(Edge9)
-    cut.append(Edge9)
-    B2.addEdge(Edge10)
-    B1.addEdge(Edge11)
-    B1.addEdge(Edge12)
-    B2.addEdge(Edge13)
-    B2.addEdge(Edge14)
-    B1.addEdge(Edge15)
-    # MGraph.addEdge(Edge16)
-    cut.append(Edge16)
-    B2.addEdge(Edge17)
-    B1.addEdge(Edge18)
-    B1.addEdge(Edge19)
-    B2.addEdge(Edge20)
-    B2.addEdge(Edge21)
-    B1.addEdge(Edge22)
-    # MGraph.addEdge(Edge23)
-    cut.append(Edge23)
-    B2.addEdge(Edge24)
-
-    # for elt in MGraph.getVertices()[:int(len(MGraph.getVertices())/2)]:
-    # Fminus(MGraph)
-    # getMinimas(MGraph)
-    # MThinning(MGraph)
-    # BThinning(MGraph)
-    BlocThinning(B1,B2,cut)
-
-
-
-    # connexeComponent(MGraph)
-    # B1.affiche()
-    # print()
-    # B2.affiche()
-
-    connexeComponent(B1)
-    connexeComponent(B2)
-
-    BlocLabelling(B1,B2,cut)
-
-    # for vertice in MGraph.getVertices():
-        # print(vertice.getName(), " = ", vertice.getMinLab())
-    # print()
-    for vertice in B1.getVertices():
-        print(vertice.getName(), " = ", vertice.getLabel())
-    B1.affiche()
-    print()
-    for vertice in B2.getVertices():
-        print(vertice.getName(), " = ", vertice.getLabel())
-    B2.affiche()
-    #print(hasEdge(MGraph,Point2,Point1))
-    # MGraph.affiche()
-
-
-    print("teeeeeeeeeeeeeest")
-    testgraph = create_graph(6,6)
-    testgraph.affiche()
-    divide_blocks(testgraph,3,2)
-    pass
 
 if __name__ == '__main__':
     main()
-
-# parametre : le graphe et la taille des blocs
