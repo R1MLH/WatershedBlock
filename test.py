@@ -2,6 +2,7 @@ import OOC
 import string
 import random
 import UnionFind
+import numpy as np
 
 uf = UnionFind()
 
@@ -219,77 +220,151 @@ def getMinimas(Graph):
 
 
 def create_graph(X,Y):
-    # X = imsize.len_x
-    # Y = imsize.len_y
+    """
+    Returns a graph of dimensions X and Y with random weights.
+    """
+    #tab_vertices[X][Y]
 
+    tab_vertices = [[0 for x in range(Y)] for y in range(X)]
     new_graph = OOC.Graph()
-    n =  X*Y
+    new_graph.dim_x = X
+    new_graph.dim_y = Y
 
+    #creating the vertices
     for i in range (X):
-        for j in range(Y):
-            new_graph.addVertice(OOC.Vertice(str(i)+str(j)))
+        for j in range (Y):
+            tab_vertices[i][j] = OOC.Vertice(str(i)+str(j))
+            new_graph.addVertice(tab_vertices[i][j])
 
-
+    # creating horizontal edges
     for i in range (X):
-        for j in range(1,Y):
-            # print("i :",i,"\n");
-            # print("j :",j,"\n");
+        for j in range (Y-1):
             weight = random.randint(0,5)
-            new_graph.addEdge(OOC.Edge(new_graph.vertices[i*Y+j-1],new_graph.vertices[i*Y+j],weight))
+            new_graph.addEdge(OOC.Edge(tab_vertices[i][j],tab_vertices[i][j+1],weight))
 
-            #vertices = new_graph.getVertices()
-            #[vertice[i] if vertice[i] == ]
-
-
-            if i is not 0:
-                weight = random.randint(0,5)
-                new_graph.addEdge(OOC.Edge(new_graph.vertices[(i-1)*Y+j],new_graph.vertices[i*Y+j],weight))
-                # print("i :",i,"\n");
-                # print("j :",j,"\n");
-            #else :
-
-
-
-
-
-
-        # for k in range(1,Y):
-            # weight = random.randint(0,5)
-            # new_graph.addEdge(OOC.Edge(new_graph.vertices[k-1],new_graph.vertices[k],weight))
+    # creating vertical edges
+    for j in range (Y):
+        for i in range (X-1):
+            weight = random.randint(0,5)
+            new_graph.addEdge(OOC.Edge(tab_vertices[i][j],tab_vertices[i+1][j],weight))
 
     return new_graph
 
 
+def create_graph_file(graph, filename):
+    """
+    Parameters :
+    - The graph that we want to save the information in a file.
 
-# def create_graph(X,Y):
-    # # X = imsize.len_x
-    # # Y = imsize.len_y
+    Returns a file containing all the information of the graph given in parameters.
+    """
+    with open(filename, mode='w+', encoding='utf8') as f:
 
-    # new_graph = OOC.Graph()
+        f.write("#rs "+str(graph.dim_x)+" cs "+ str(graph.dim_y) + "\n")
+        f.write(str(len(graph.vertices)) + " " + str(len(graph.edges)) + "\n")
 
-    # edges = []
-    # for y in range(Y):
-        # for x in range(X):
-            # pos = x + y * X
-            # eq1 = x + 1 + y * X
-            # if x + 1 < X:
-                # weight = random.randint(0,5)
-                # new_graph.addEdge(OOC.Edge(new_graph.vertices[pos],new_graph.vertices[eq1],weight))
-            # eq2 = x + (y + 1) * X
-            # if y + 1 < Y:
-                # edges.append((pos, eq2))
-                # weight = random.randint(0,5)
-                # new_graph.addEdge(OOC.Edge(new_graph.vertices[pos],new_graph.vertices[eq2],weight))
-     # #weights = [abs(int(i)) for i in np.random.normal(110, 40, len(edges))]
+        f.write("val sommets\n")
+        for vertice in graph.vertices:
+            f.write(vertice.name + " 1" +"\n")
 
-    # #graph1 = Graph(n_vertices=X * Y, edges=edges, weights=weights)
-    # return new_graph
+        f.write("arcs values\n")
+        for edge in graph.edges:
+            f.write(edge.x.name + " " + edge.y.name + " " + str(edge.weight)+ "\n")
 
+def fill_graph_with_file(filename):
 
+    """
+    Parameters :
+    - The name of the file that contains all the information to produce a given graph. The file must hast a particular structure
 
-# def cut_graph(graph,dimensions,nb_x,nb_y):
-    # for nb_x
-    # return cuts
+    Returns a graph filled with the information available in the file given in parameters.
+    """
+    new_graph = OOC.Graph() #Graph to fill
+
+    with open(filename, mode = "r", encoding = "utf8") as f :
+        lines = f.read().splitlines() #list of string containing all lines of the file
+
+        #1st line : get nb columns/nb rows of the graph
+        rs_cs = lines[0]
+        rs_cs = rs_cs.replace("#rs","").replace("cs"," ")
+        new_graph.dim_x, new_graph.dim_y = [int(x) for x in rs_cs.split()]
+
+        #2nd line : get nb vertices/nb edges
+        nb_v_e = lines[1]
+        nb_vertices, nb_edges = [int(x) for x in nb_v_e.split()]
+
+        # Check consistency with previous data
+        m = new_graph.dim_x
+        n = new_graph.dim_y
+        if nb_vertices != m*n:
+            print('Incoherent nb vertices and dimensions')
+            return
+
+        if nb_edges != (m-1)*n +(n-1)*m:
+            print("Incoherent nb edges and dimensions")
+            return
+
+        #3rd line : get interesting indexes
+        index1 = lines.index("val sommets")
+        index2 = lines.index("arcs values")
+
+        #get "val sommets" : name of vertices
+        vals_sommets = [x.split() for x in lines[index1+1:index2]]
+        new_graph.vertices.extend([OOC.Vertice(sommet[0]) for sommet in vals_sommets])
+
+        #get "arcs values" : edges
+        arcs_values = [x.split() for x in lines[index2+1:]]
+        new_graph.edges.extend([OOC.Edge(OOC.Vertice(edge[0]),OOC.Vertice(edge[1]),int(edge[2])) for edge in arcs_values])
+
+        # Check consistency with previous data
+        if nb_vertices != len(new_graph.vertices) or nb_edges != len(new_graph.edges):
+            print('Incoherent X or Y dimensions')
+            return
+
+        return new_graph
+
+def divide_blocks(Graph, nrows, ncols):
+
+    """
+    Parameters :
+    - Graph to cut
+    - size of the blocks (nb of rows and cols)
+
+    Returns a list of graphs. The graphs are subgraphs/blocks of the initial graph given in parameters.
+    The cut attribute (graph.cut) contains a list of all adjacent edges.
+
+    """
+
+    sub_graphs = [] # list containing all the blocs (sub graphs)
+    Graph.vertices = np.array(Graph.vertices)
+    B = np.reshape(Graph.vertices, (-1, Graph.dim_y))
+
+    h, w = B.shape
+    C = B.reshape(h//nrows, nrows, -1, ncols).swapaxes(1,2).reshape(-1, nrows, ncols)
+
+    print("B =\n",B) # "grid" initial graph
+    print("C =\n",C) # "grid" subgraphs/blocks
+
+    for block in C:
+        new_graph = OOC.Graph()
+        new_graph.dim_x = nrows
+        new_graph.dim_y = ncols
+
+        for line in block:
+            for vertice in line:
+                new_graph.addVertice(vertice) # add each element to the list of vertices
+                sg_edges,sg_cut_edges = Graph.adjacentEdge(vertice, new_graph.vertices)
+
+                new_graph.edges.extend(sg_edges)
+                new_graph.cut.extend(sg_cut_edges)
+
+        new_graph.edges = list(set (new_graph.edges))
+        new_graph.cut = set(new_graph.cut).difference(new_graph.edges)
+        sub_graphs.append(new_graph)
+
+    #print(sub_graphs[1].edges)
+    #print("\n",sub_graphs[1].cut)
+    return sub_graphs
 
 
 
@@ -308,58 +383,11 @@ def label_composante_connexe(graphe,taille_bloc):
 
 
 
-
-
 def main():
     # MGraph = OOC.Graph()
     B1 = OOC.Graph()
     B2 = OOC.Graph()
     cut = []
-
-    # Point1= OOC.Vertice("A",0)
-    # Point2= OOC.Vertice("B",0)
-    # Point3= OOC.Vertice("C",0)
-    # Point4= OOC.Vertice("D",0)
-    # Point5= OOC.Vertice("E",0)
-    # Point6= OOC.Vertice("F",0)
-    # Point7= OOC.Vertice("G",0)
-    # Point8= OOC.Vertice("H",0)
-    # Point9= OOC.Vertice("I",0)
-    # Edge1 = OOC.Edge(Point1,Point2,0)
-    # Edge2 = OOC.Edge(Point2,Point3,2)
-    # Edge3 = OOC.Edge(Point1,Point4,0)
-    # Edge4 = OOC.Edge(Point2,Point5,1)
-    # Edge5 = OOC.Edge(Point3,Point6,2)
-    # Edge6 = OOC.Edge(Point4,Point5,1)
-    # Edge7 = OOC.Edge(Point5,Point6,2)
-    # Edge8 = OOC.Edge(Point4,Point7,1)
-    # Edge9 = OOC.Edge(Point5,Point8,2)
-    # Edge10 = OOC.Edge(Point6,Point9,1)
-    # Edge11 = OOC.Edge(Point7,Point8,2)
-    # Edge12 = OOC.Edge(Point8,Point9,1)
-
-    # MGraph.addVertice(Point1)
-    # MGraph.addVertice(Point2)
-    # MGraph.addVertice(Point3)
-    # MGraph.addVertice(Point4)
-    # MGraph.addVertice(Point5)
-    # MGraph.addVertice(Point6)
-    # MGraph.addVertice(Point7)
-    # MGraph.addVertice(Point8)
-    # MGraph.addVertice(Point9)
-
-    # MGraph.addEdge(Edge1)
-    # MGraph.addEdge(Edge2)
-    # MGraph.addEdge(Edge3)
-    # MGraph.addEdge(Edge4)
-    # MGraph.addEdge(Edge5)
-    # MGraph.addEdge(Edge6)
-    # MGraph.addEdge(Edge7)
-    # MGraph.addEdge(Edge8)
-    # MGraph.addEdge(Edge9)
-    # MGraph.addEdge(Edge10)
-    # MGraph.addEdge(Edge11)
-    # MGraph.addEdge(Edge12)
 
     PointA= OOC.Vertice("A",0)
     PointB= OOC.Vertice("B",0)
@@ -486,8 +514,9 @@ def main():
 
 
     print("teeeeeeeeeeeeeest")
-    testgraph = create_graph(3,4)
+    testgraph = create_graph(6,6)
     testgraph.affiche()
+    divide_blocks(testgraph,3,2)
     pass
 
 if __name__ == '__main__':
